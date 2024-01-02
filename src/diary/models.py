@@ -41,6 +41,9 @@ class FoodList(Base):
     valid_to = Column(DateTime, server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
     user: Mapped['User'] = relationship(back_populates="food_list")
+    breakfast = relationship('BreakfastList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
+    lunch = relationship('LunchList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
+    dinner = relationship('DinnerList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
 
 
 class BreakfastList(Base):
@@ -51,7 +54,9 @@ class BreakfastList(Base):
     dishes = relationship('Dish', secondary=breakfast_dish_association, back_populates='breakfast_lists')
     weight = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-    food_list_id = Column(Integer, ForeignKey("food_lists.id"))
+    food_list = relationship('FoodList', back_populates='breakfast')
+    food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
+
 
 class LunchList(Base):
     """Список еды на обед"""
@@ -59,9 +64,11 @@ class LunchList(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     dishes = relationship('Dish', secondary=lunch_dish_association, back_populates='lunch_lists')
+    food_list = relationship('FoodList', back_populates='lunch')
     weight = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-    food_list_id = Column(Integer, ForeignKey("food_lists.id"))
+    food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
+
 
 class DinnerList(Base):
     """Список еды на ужин"""
@@ -69,9 +76,10 @@ class DinnerList(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     dishes = relationship('Dish', secondary=dinner_dish_association, back_populates='dinner_lists')
+    food_list = relationship('FoodList', back_populates='dinner')
     weight = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-    food_list_id = Column(Integer, ForeignKey("food_lists.id"))
+    food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
 
 
 class Category(Base):

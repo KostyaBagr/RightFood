@@ -1,8 +1,8 @@
-"""Fixed Dish table
+"""updated fk to lunch, dinner
 
-Revision ID: e92d7c222989
+Revision ID: 190b1f59ca59
 Revises: 
-Create Date: 2024-01-01 19:28:20.709747
+Create Date: 2024-01-02 20:33:01.602119
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e92d7c222989'
+revision: str = '190b1f59ca59'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
