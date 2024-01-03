@@ -1,34 +1,24 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Table
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Table
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
 from src.config.base import Base
 
-breakfast_dish_association = Table(
-    'breakfast_dish_association',
-    Base.metadata,
-    Column('breakfast_id', Integer, ForeignKey('breakfast_lists.id', ondelete='CASCADE')),
-    Column('dish_id', Integer, ForeignKey('dishes.id', ondelete='CASCADE')),
-    Column('weight', String),
-    Column('created_at', DateTime, server_default=func.now()),
+breakfast_intermediate_dish_association = Table(
+    'breakfast_intermediate_dish_association', Base.metadata,
+    Column('breakfast_list_id', Integer, ForeignKey('breakfast_lists.id')),
+    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
 )
 
-lunch_dish_association = Table(
-    'lunch_dish_association',
-    Base.metadata,
-    Column('lunch_id', Integer, ForeignKey('lunch_lists.id', ondelete='CASCADE')),
-    Column('dish_id', Integer, ForeignKey('dishes.id', ondelete='CASCADE')),
-    Column('weight', String),
-    Column('created_at', DateTime, server_default=func.now()),
+lunch_intermediate_dish_association = Table(
+    'lunch_intermediate_dish_association', Base.metadata,
+    Column('lunch_list_id', Integer, ForeignKey('lunch_lists.id')),
+    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
 )
 
-dinner_dish_association = Table(
-    'dinner_dish_association',
-    Base.metadata,
-    Column('dinner_id', Integer, ForeignKey('dinner_lists.id', ondelete='CASCADE')),
-    Column('dish_id', Integer, ForeignKey('dishes.id', ondelete='CASCADE')),
-    Column('weight', String),
-    Column('created_at', DateTime, server_default=func.now()),
+dinner_intermediate_dish_association = Table(
+    'dinner_intermediate_dish_association', Base.metadata,
+    Column('dinner_list_id', Integer, ForeignKey('dinner_lists.id')),
+    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
 )
 
 
@@ -40,7 +30,7 @@ class FoodList(Base):
     created_at = Column(DateTime, server_default=func.now())
     valid_to = Column(DateTime, server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
-    user: Mapped['User'] = relationship(back_populates="food_list")
+    user: Mapped['User'] = relationship('User', back_populates="food_list")
     breakfast = relationship('BreakfastList', back_populates='food_list', uselist=False, cascade="all, delete")
     lunch = relationship('LunchList', back_populates='food_list', uselist=False, cascade="all, delete")
     dinner = relationship('DinnerList', back_populates='food_list', uselist=False, cascade="all, delete")
@@ -51,8 +41,7 @@ class BreakfastList(Base):
     __tablename__ = 'breakfast_lists'
 
     id = Column(Integer, primary_key=True, index=True)
-    dishes = relationship('Dish', secondary=breakfast_dish_association, back_populates='breakfast_lists')
-    weight = Column(String, nullable=False)
+    intermediate_dishes = relationship('IntermediateDish', back_populates='breakfast_lists')
     created_at = Column(DateTime, server_default=func.now())
     food_list = relationship('FoodList', back_populates='breakfast')
     food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
@@ -63,9 +52,8 @@ class LunchList(Base):
     __tablename__ = 'lunch_lists'
 
     id = Column(Integer, primary_key=True, index=True)
-    dishes = relationship('Dish', secondary=lunch_dish_association, back_populates='lunch_lists')
+    intermediate_dishes = relationship('IntermediateDish', back_populates='lunch_lists')
     food_list = relationship('FoodList', back_populates='lunch')
-    weight = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
 
@@ -75,9 +63,8 @@ class DinnerList(Base):
     __tablename__ = 'dinner_lists'
 
     id = Column(Integer, primary_key=True, index=True)
-    dishes = relationship('Dish', secondary=dinner_dish_association, back_populates='dinner_lists')
+    intermediate_dishes = relationship('IntermediateDish', back_populates='dinner_lists')
     food_list = relationship('FoodList', back_populates='dinner')
-    weight = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     food_list_id = Column(Integer, ForeignKey("food_lists.id"), unique=True)
 
@@ -92,6 +79,31 @@ class Category(Base):
     dishes = relationship('Dish', back_populates='category')
 
 
+class IntermediateDish(Base):
+    """Промежуточная модель еды для добавления ее в список BreakfastList, LunchList, DinnerList"""
+
+    __tablename__ = 'intermediate_dishes'
+
+    id = Column(Integer, primary_key=True, index=True)
+    weight = Column(String, nullable=False)
+    dish_id = Column(Integer, ForeignKey("dishes.id"))
+    dish = relationship('Dish', back_populates="intermediate_dish")
+    created_at = Column(DateTime, server_default=func.now())
+
+    calories = Column(String(5), nullable=False)
+    fats = Column(String(5), nullable=False)
+    proteins = Column(String(5), nullable=False)
+
+    breakfast_list_id = Column(Integer, ForeignKey("breakfast_lists.id"))
+    breakfast_lists = relationship('BreakfastList', back_populates='intermediate_dishes')
+
+    lunch_list_id = Column(Integer, ForeignKey("lunch_lists.id"))
+    lunch_lists = relationship('LunchList', back_populates='intermediate_dishes')
+
+    dinner_list_id = Column(Integer, ForeignKey("dinner_lists.id"))
+    dinner_lists = relationship('DinnerList', back_populates='intermediate_dishes')
+
+
 class Dish(Base):
     """Информация о блюде"""
     __tablename__ = 'dishes'
@@ -99,9 +111,7 @@ class Dish(Base):
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
     category = relationship('Category', back_populates='dishes')
-    breakfast_lists = relationship('BreakfastList', secondary=breakfast_dish_association, back_populates='dishes')
-    lunch_lists = relationship('LunchList', secondary=lunch_dish_association, back_populates='dishes')
-    dinner_lists = relationship('DinnerList', secondary=dinner_dish_association, back_populates='dishes')
+    intermediate_dish = relationship('IntermediateDish', back_populates='dishes')
     name = Column(String(100), nullable=False)
     brand = Column(String(100), nullable=False)
     calories = Column(String(5), nullable=False)

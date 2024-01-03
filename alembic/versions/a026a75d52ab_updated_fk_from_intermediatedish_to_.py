@@ -1,8 +1,8 @@
-"""updated fk to lunch, dinner
+"""updated FK from IntermediateDish to meals tables
 
-Revision ID: 190b1f59ca59
+Revision ID: a026a75d52ab
 Revises: 
-Create Date: 2024-01-02 20:33:01.602119
+Create Date: 2024-01-03 22:16:07.284306
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '190b1f59ca59'
+revision: str = 'a026a75d52ab'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -67,63 +67,77 @@ def upgrade() -> None:
     op.create_index(op.f('ix_food_lists_id'), 'food_lists', ['id'], unique=False)
     op.create_table('breakfast_lists',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('weight', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('food_list_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['food_list_id'], ['food_lists.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('food_list_id')
     )
     op.create_index(op.f('ix_breakfast_lists_id'), 'breakfast_lists', ['id'], unique=False)
     op.create_table('dinner_lists',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('weight', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('food_list_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['food_list_id'], ['food_lists.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('food_list_id')
     )
     op.create_index(op.f('ix_dinner_lists_id'), 'dinner_lists', ['id'], unique=False)
     op.create_table('lunch_lists',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('weight', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('food_list_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['food_list_id'], ['food_lists.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('food_list_id')
     )
     op.create_index(op.f('ix_lunch_lists_id'), 'lunch_lists', ['id'], unique=False)
-    op.create_table('breakfast_dish_association',
-    sa.Column('breakfast_id', sa.Integer(), nullable=True),
+    op.create_table('intermediate_dishes',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('weight', sa.String(), nullable=False),
     sa.Column('dish_id', sa.Integer(), nullable=True),
-    sa.Column('weight', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['breakfast_id'], ['breakfast_lists.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['dish_id'], ['dishes.id'], ondelete='CASCADE')
+    sa.Column('calories', sa.String(length=5), nullable=False),
+    sa.Column('fats', sa.String(length=5), nullable=False),
+    sa.Column('proteins', sa.String(length=5), nullable=False),
+    sa.Column('breakfast_list_id', sa.Integer(), nullable=True),
+    sa.Column('lunch_list_id', sa.Integer(), nullable=True),
+    sa.Column('dinner_list_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['breakfast_list_id'], ['breakfast_lists.id'], ),
+    sa.ForeignKeyConstraint(['dinner_list_id'], ['dinner_lists.id'], ),
+    sa.ForeignKeyConstraint(['dish_id'], ['dishes.id'], ),
+    sa.ForeignKeyConstraint(['lunch_list_id'], ['lunch_lists.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('dinner_dish_association',
-    sa.Column('dinner_id', sa.Integer(), nullable=True),
-    sa.Column('dish_id', sa.Integer(), nullable=True),
-    sa.Column('weight', sa.String(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['dinner_id'], ['dinner_lists.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['dish_id'], ['dishes.id'], ondelete='CASCADE')
+    op.create_index(op.f('ix_intermediate_dishes_id'), 'intermediate_dishes', ['id'], unique=False)
+    op.create_table('breakfast_intermediate_dish_association',
+    sa.Column('breakfast_list_id', sa.Integer(), nullable=True),
+    sa.Column('intermediate_dish_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['breakfast_list_id'], ['breakfast_lists.id'], ),
+    sa.ForeignKeyConstraint(['intermediate_dish_id'], ['intermediate_dishes.id'], )
     )
-    op.create_table('lunch_dish_association',
-    sa.Column('lunch_id', sa.Integer(), nullable=True),
-    sa.Column('dish_id', sa.Integer(), nullable=True),
-    sa.Column('weight', sa.String(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['dish_id'], ['dishes.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['lunch_id'], ['lunch_lists.id'], ondelete='CASCADE')
+    op.create_table('dinner_intermediate_dish_association',
+    sa.Column('dinner_list_id', sa.Integer(), nullable=True),
+    sa.Column('intermediate_dish_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['dinner_list_id'], ['dinner_lists.id'], ),
+    sa.ForeignKeyConstraint(['intermediate_dish_id'], ['intermediate_dishes.id'], )
+    )
+    op.create_table('lunch_intermediate_dish_association',
+    sa.Column('lunch_list_id', sa.Integer(), nullable=True),
+    sa.Column('intermediate_dish_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['intermediate_dish_id'], ['intermediate_dishes.id'], ),
+    sa.ForeignKeyConstraint(['lunch_list_id'], ['lunch_lists.id'], )
     )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('lunch_dish_association')
-    op.drop_table('dinner_dish_association')
-    op.drop_table('breakfast_dish_association')
+    op.drop_table('lunch_intermediate_dish_association')
+    op.drop_table('dinner_intermediate_dish_association')
+    op.drop_table('breakfast_intermediate_dish_association')
+    op.drop_index(op.f('ix_intermediate_dishes_id'), table_name='intermediate_dishes')
+    op.drop_table('intermediate_dishes')
     op.drop_index(op.f('ix_lunch_lists_id'), table_name='lunch_lists')
     op.drop_table('lunch_lists')
     op.drop_index(op.f('ix_dinner_lists_id'), table_name='dinner_lists')
