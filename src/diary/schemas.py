@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel
-from typing_extensions import Optional
+from typing import Optional
 
 
 class BaseDish(BaseModel):

@@ -47,7 +47,7 @@ def add_category(category: schemas.BaseCategory, db: Session = (Depends(get_db))
     return db_category
 
 
-def create_food_list(db: Session, food_list_create: schemas.CreateDailyFood):
+def create_food_list(food_list_create: schemas.CreateDailyFood, db: Session):
     """Создание объекта foodlist"""
     db_food_list = FoodList(**food_list_create.dict())
     db.add(db_food_list)
@@ -56,10 +56,10 @@ def create_food_list(db: Session, food_list_create: schemas.CreateDailyFood):
     return db_food_list
 
 
-def get_food_list(db: Session, food_list_id: int=None):
+def get_food_list(db: Session, food_list_id: int = None):
     """Получение спика еды пользователя за день"""
 
-    #добавить: получение еды именно для текущего пользователя
+    # добавить: получение еды именно для текущего пользователя
     food_list = db.query(FoodList).filter(FoodList.id == food_list_id).first()
 
     if food_list:
@@ -81,10 +81,11 @@ def get_food_list(db: Session, food_list_id: int=None):
     else:
         return {"error": "Food list not found for the given user_id"}
 
-def create_meal(data: schemas.CreateMeal, db: Session, model:Type[Union[BreakfastList, LunchList, DinnerList]]):
+
+def create_meal(data: schemas.CreateMeal, db: Session, model: Type[Union[BreakfastList, LunchList, DinnerList]]):
     """Создание объекта приема пищи. Breakfast, lunch, dinner"""
 
-    meal= model(
+    meal = model(
         weight=data.weight,
         food_list_id=data.food_list_id,
         dishes=data.dishes if data.dishes is not None else []
@@ -106,5 +107,3 @@ def create_meal(data: schemas.CreateMeal, db: Session, model:Type[Union[Breakfas
     db.commit()
 
     return meal
-
-

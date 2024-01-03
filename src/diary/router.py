@@ -36,9 +36,9 @@ def create_category(category: schemas.BaseCategory, db: Session = (Depends(get_d
 
 
 @router.post("/create_food_list/", response_model=schemas.CreateDailyFood)
-def add_food_list(food_list_create: schemas.CreateDailyFood, db: Session = Depends(get_db)):
+def add_food_list(food_list_create: schemas.CreateDailyFood, data: schemas.CreateMeal, db: Session = Depends(get_db)):
     """CREATE FoodList"""
-    return create_food_list(db, food_list_create)
+    return create_food_list(food_list_create=food_list_create, db=db)
 
 
 @router.get("/user_food_list/", response_model=schemas.GetDailyList)
@@ -48,22 +48,19 @@ def get_daily_food_list(food_list_id: int = None, db: Session = Depends(get_db))
     return get_food_list(db=db, food_list_id=food_list_id)
 
 
-@router.post("/create_breakfast_list/", response_model=schemas.CreateMeal)
-def add_breakfast_list(data: schemas.CreateMeal, db: Session = Depends(get_db)):
-    """CREATE BreakfastList"""
+@router.post("/create_meals/")
+def add_meals(data: schemas.CreateMeal, db: Session = Depends(get_db)):
+    """Create meals(breakfast, lunch, dinner)"""
+    breakfast = create_meal(data=data, db=db, model=BreakfastList)
+    lunch = create_meal(data=data, db=db, model=LunchList)
+    dinner = create_meal(data=data, db=db, model=DinnerList)
 
-    return create_meal(data=data, db=db, model=BreakfastList)
+    return {
+        "breakfast": breakfast,
+        "lunch": lunch,
+        "dinner": dinner
+    }
 
 
-@router.post("/create_lunch_list/", response_model=schemas.CreateMeal)
-def add_lunch_list(data: schemas.CreateMeal, db: Session = Depends(get_db)):
-    """CREATE LunchList"""
-    return create_meal(data=data, db=db, model=LunchList)
-
-
-@router.post("/create_dinner_list/", response_model=schemas.CreateMeal)
-def add_dinner_list(data: schemas.CreateMeal, db: Session = Depends(get_db)):
-    """CREATE DinnerList"""
-    return create_meal(data=data, db=db, model=DinnerList)
 
 

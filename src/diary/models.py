@@ -41,9 +41,9 @@ class FoodList(Base):
     valid_to = Column(DateTime, server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
     user: Mapped['User'] = relationship(back_populates="food_list")
-    breakfast = relationship('BreakfastList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
-    lunch = relationship('LunchList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
-    dinner = relationship('DinnerList', back_populates='food_list', uselist=False, cascade="all, delete-orphan")
+    breakfast = relationship('BreakfastList', back_populates='food_list', uselist=False, cascade="all, delete")
+    lunch = relationship('LunchList', back_populates='food_list', uselist=False, cascade="all, delete")
+    dinner = relationship('DinnerList', back_populates='food_list', uselist=False, cascade="all, delete")
 
 
 class BreakfastList(Base):
