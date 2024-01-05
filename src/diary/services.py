@@ -1,10 +1,10 @@
 from typing import Type, Union
-
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from database import get_db
 from fastapi import Depends
-from src.diary.models import Dish, Category, FoodList, BreakfastList, LunchList, DinnerList
+from src.diary.models import Dish, Category, FoodList, BreakfastList, LunchList, DinnerList, IntermediateDish
 from src.diary import schemas
 
 
@@ -13,7 +13,10 @@ def get_dish_list(limit: int, db: Session = (Depends(get_db)), category_id: int 
     limit - Лимит по выдаче блюд
     db - БД
     category_id - опциональный парамерт для фильтрации по категориям"""
-    return db.query(Dish).filter(Dish.category_id == category_id).limit(limit).all()
+    if category_id is not None:
+        return db.query(Dish).filter(Dish.category_id == category_id).limit(limit).all()
+    else:
+        return db.query(Dish).limit(limit).all()
 
 
 def add_dish(food: schemas.BaseDish, db: Session = (Depends(get_db))):
@@ -63,21 +66,44 @@ def get_food_list(db: Session, food_list_id: int = None):
     food_list = db.query(FoodList).filter(FoodList.id == food_list_id).first()
 
     if food_list:
-        breakfast = db.query(BreakfastList).filter(BreakfastList.food_list_id == food_list.id).all()
+        breakfast = db.query(BreakfastList).filter(BreakfastList.food_list_id == food_list.id).options(joinedload(BreakfastList.intermediate_dishes)).first()
         lunch = db.query(LunchList).filter(LunchList.food_list_id == food_list.id).all()
         dinner = db.query(DinnerList).filter(DinnerList.food_list_id == food_list.id).all()
 
-        response_data = {
-            "id": food_list.id,
-            "created_at": food_list.created_at,
-            "valid_to": food_list.valid_to,
-            "user_id": food_list.user_id,
-            "breakfast": breakfast,
-            "lunch": lunch,
-            "dinner": dinner,
-        }
+        if breakfast:
+            intermediate_dishes = breakfast.intermediate_dishes
 
-        return response_data
+            response_data = {
+                "id": food_list.id,
+                "created_at": food_list.created_at,
+                "valid_to": food_list.valid_to,
+                "user_id": food_list.user_id,
+                "breakfast": [
+                    {
+                        "id": breakfast.id,
+                        "created_at": breakfast.created_at,
+                        "food_list_id": breakfast.food_list_id,
+                        "intermediate_dishes": [
+                            {
+                                "id": dish.id,
+                                "dish_id": dish.dish_id,   #отображать еду
+                                "weight": dish.weight,
+                                "calories": dish.calories,
+                                "fats": dish.fats,
+                                "proteins": dish.proteins,
+                                "breakfast_list_id": dish.breakfast_list_id if dish.breakfast_list_id else None,
+                                "created_at": dish.created_at,
+                            }
+                            for dish in intermediate_dishes
+                        ],
+                    }
+                ],
+                "lunch": [],  # Add similar handling for lunch and dinner if needed
+                "dinner": [],
+            }
+
+            return response_data
+
     else:
         return {"error": "Food list not found for the given user_id"}
 
@@ -86,9 +112,8 @@ def create_meal(data: schemas.CreateMeal, db: Session, model: Type[Union[Breakfa
     """Создание объекта приема пищи. Breakfast, lunch, dinner"""
 
     meal = model(
-        weight=data.weight,
         food_list_id=data.food_list_id,
-        dishes=data.dishes if data.dishes is not None else []
+
     )
     food_list = db.query(FoodList).filter(FoodList.id == data.food_list_id).first()
 
@@ -107,3 +132,23 @@ def create_meal(data: schemas.CreateMeal, db: Session, model: Type[Union[Breakfa
     db.commit()
 
     return meal
+
+
+def create_intermediate_dish(data: schemas.CreateIntermediateDish, db: Session):
+    """Создание объекта intermediate dish"""
+    db_inter_dish = IntermediateDish(
+        dish_id=data.dish_id,
+        breakfast_list_id=data.breakfast_list_id if data.breakfast_list_id else None,
+        lunch_list_id=data.lunch_list_id if data.lunch_list_id else None,
+        dinner_list_id=data.dinner_list_id if data.dinner_list_id else None,
+        weight=data.weight
+    )
+    db.add(db_inter_dish)
+    db.commit()
+    db.refresh(db_inter_dish)
+    return db_inter_dish
+
+
+def get_intermediate_dish(inter_dish_id: int, db: Session):
+    """Получение объекта intermediate dish"""
+    return db.query(IntermediateDish).filter(IntermediateDish.id == inter_dish_id).first()

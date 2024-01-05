@@ -3,24 +3,6 @@ from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.sql import func
 from src.config.base import Base
 
-breakfast_intermediate_dish_association = Table(
-    'breakfast_intermediate_dish_association', Base.metadata,
-    Column('breakfast_list_id', Integer, ForeignKey('breakfast_lists.id')),
-    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
-)
-
-lunch_intermediate_dish_association = Table(
-    'lunch_intermediate_dish_association', Base.metadata,
-    Column('lunch_list_id', Integer, ForeignKey('lunch_lists.id')),
-    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
-)
-
-dinner_intermediate_dish_association = Table(
-    'dinner_intermediate_dish_association', Base.metadata,
-    Column('dinner_list_id', Integer, ForeignKey('dinner_lists.id')),
-    Column('intermediate_dish_id', Integer, ForeignKey('intermediate_dishes.id'))
-)
-
 
 class FoodList(Base):
     """Список еды за день"""
@@ -28,6 +10,10 @@ class FoodList(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
+    total_calories = Column(String, default=0)
+    total_fats = Column(String, default=0)
+    total_proteins = Column(String, default=0)
+    total_carbohydrates = Column(String, default=0)
     valid_to = Column(DateTime, server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
     user: Mapped['User'] = relationship('User', back_populates="food_list")
@@ -87,12 +73,12 @@ class IntermediateDish(Base):
     id = Column(Integer, primary_key=True, index=True)
     weight = Column(String, nullable=False)
     dish_id = Column(Integer, ForeignKey("dishes.id"))
-    dish = relationship('Dish', back_populates="intermediate_dish")
+    dish = relationship('Dish', backref="intermediate_dishes", uselist=False)
     created_at = Column(DateTime, server_default=func.now())
 
-    calories = Column(String(5), nullable=False)
-    fats = Column(String(5), nullable=False)
-    proteins = Column(String(5), nullable=False)
+    calories = Column(String(5), nullable=True)
+    fats = Column(String(5), nullable=True)
+    proteins = Column(String(5), nullable=True)
 
     breakfast_list_id = Column(Integer, ForeignKey("breakfast_lists.id"))
     breakfast_lists = relationship('BreakfastList', back_populates='intermediate_dishes')
@@ -111,7 +97,6 @@ class Dish(Base):
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
     category = relationship('Category', back_populates='dishes')
-    intermediate_dish = relationship('IntermediateDish', back_populates='dishes')
     name = Column(String(100), nullable=False)
     brand = Column(String(100), nullable=False)
     calories = Column(String(5), nullable=False)
@@ -120,3 +105,4 @@ class Dish(Base):
     carbohydrates = Column(String(5), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.current_timestamp())
+

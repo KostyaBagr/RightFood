@@ -16,6 +16,7 @@ class BaseDish(BaseModel):
     carbohydrates: str
 
 
+
 class DishList(BaseDish):
     """Схема для модели Dish"""
     id: int
@@ -36,15 +37,46 @@ class CategoryList(BaseCategory):
         from_attributes = True
 
 
+class IntermediateDishBase(BaseModel):
+    """Схема для промежуточной модели еды"""
+    weight: str
+
+
+class IntermediateDishList(BaseModel):
+    """Схема для чтения IntermediateDish"""
+    id: int
+    dish_id: int
+    created_at: datetime
+    calories: Optional[str] = None
+    fats: Optional[str] = None
+    proteins: Optional[str] = None
+
+    breakfast_list_id: Optional[int] = None
+    lunch_list_id: Optional[int] = None
+    dinner_list_id: Optional[int] = None
+
+
+class CreateIntermediateDish(IntermediateDishBase):
+    """Схема для создания IntermediateDish"""
+    breakfast_list_id: int = None
+    lunch_list_id: int = None
+    dinner_list_id: int = None
+    dish_id: int
+
+
+
 class CreateMeal(BaseModel):
     """Create breakfast, lunch, dinner"""
     food_list_id: int
-    weight: str
-    dishes: List[DishList] = None
 
 
 class ListMeal(CreateMeal):
     id: int
+    intermediate_dishes: List[IntermediateDishList] = []
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 class CreateDailyFood(BaseModel):
@@ -53,7 +85,7 @@ class CreateDailyFood(BaseModel):
 
 
 class GetDailyList(BaseModel):
-    """Схема для полчения объекта foodlist"""
+    """Схема для получения объекта foodlist"""
     id: int
     breakfast: List[ListMeal] = []
     lunch: List[ListMeal] = []
@@ -64,3 +96,11 @@ class GetDailyList(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True
+
+
+
+
+
+
+
