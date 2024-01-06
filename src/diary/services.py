@@ -62,47 +62,100 @@ def create_food_list(food_list_create: schemas.CreateDailyFood, db: Session):
 def get_food_list(db: Session, food_list_id: int = None):
     """Получение спика еды пользователя за день"""
 
-    # добавить: получение еды именно для текущего пользователя
+
     food_list = db.query(FoodList).filter(FoodList.id == food_list_id).first()
 
     if food_list:
         breakfast = db.query(BreakfastList).filter(BreakfastList.food_list_id == food_list.id).options(joinedload(BreakfastList.intermediate_dishes)).first()
-        lunch = db.query(LunchList).filter(LunchList.food_list_id == food_list.id).all()
-        dinner = db.query(DinnerList).filter(DinnerList.food_list_id == food_list.id).all()
+        lunch = db.query(LunchList).filter(LunchList.food_list_id == food_list.id).options(joinedload(LunchList.intermediate_dishes)).first()
+        dinner = db.query(DinnerList).filter(DinnerList.food_list_id == food_list.id).options(joinedload(DinnerList.intermediate_dishes)).first()
 
         if breakfast:
-            intermediate_dishes = breakfast.intermediate_dishes
+            intermediate_breakfast_dishes = breakfast.intermediate_dishes
+        else:
+            intermediate_breakfast_dishes = []
 
-            response_data = {
-                "id": food_list.id,
-                "created_at": food_list.created_at,
-                "valid_to": food_list.valid_to,
-                "user_id": food_list.user_id,
-                "breakfast": [
-                    {
-                        "id": breakfast.id,
-                        "created_at": breakfast.created_at,
-                        "food_list_id": breakfast.food_list_id,
-                        "intermediate_dishes": [
-                            {
-                                "id": dish.id,
-                                "dish_id": dish.dish_id,   #отображать еду
-                                "weight": dish.weight,
-                                "calories": dish.calories,
-                                "fats": dish.fats,
-                                "proteins": dish.proteins,
-                                "breakfast_list_id": dish.breakfast_list_id if dish.breakfast_list_id else None,
-                                "created_at": dish.created_at,
-                            }
-                            for dish in intermediate_dishes
-                        ],
-                    }
-                ],
-                "lunch": [],  # Add similar handling for lunch and dinner if needed
-                "dinner": [],
-            }
+        if lunch:
+            intermediate_lunch_dishes = lunch.intermediate_dishes
+        else:
+            intermediate_lunch_dishes = []
 
-            return response_data
+        if dinner:
+            intermediate_dinner_dishes = dinner.intermediate_dishes
+        else:
+            intermediate_dinner_dishes = []
+
+        response_data = {
+            "id": food_list.id,
+            "created_at": food_list.created_at,
+            "valid_to": food_list.valid_to,
+            "user_id": food_list.user_id,
+            "breakfast": [
+                {
+                    "id": breakfast.id,
+                    "created_at": breakfast.created_at,
+                    "food_list_id": breakfast.food_list_id,
+                    "intermediate_dishes": [
+                        {
+                            "id": dish.id,
+                            "dish_id": dish.dish_id,
+                            "dish_name": dish.dish.name,
+                            "weight": dish.weight,
+                            "calories": dish.calories,
+                            "fats": dish.fats,
+                            "proteins": dish.proteins,
+                            "breakfast_list_id": dish.breakfast_list_id if dish.breakfast_list_id else None,
+                            "created_at": dish.created_at,
+                        }
+                        for dish in intermediate_breakfast_dishes
+                    ],
+                }
+            ],
+            "lunch": [
+                {
+                    "id": lunch.id,
+                    "created_at": lunch.created_at,
+                    "food_list_id": lunch.food_list_id,
+                    "intermediate_dishes": [
+                        {
+                            "id": dish.id,
+                            "dish_id": dish.dish_id,
+                            "dish_name": dish.dish.name,
+                            "weight": dish.weight,
+                            "calories": dish.calories,
+                            "fats": dish.fats,
+                            "proteins": dish.proteins,
+                            "lunch_list_id": dish.lunch_list_id if dish.lunch_list_id else None,
+                            "created_at": dish.created_at,
+                        }
+                        for dish in intermediate_lunch_dishes
+                    ],
+                }
+            ],
+            "dinner": [
+                {
+                    "id": dinner.id,
+                    "created_at": dinner.created_at,
+                    "food_list_id": dinner.food_list_id,
+                    "intermediate_dishes": [
+                        {
+                            "id": dish.id,
+                            "dish_id": dish.dish_id,
+                            "dish_name": dish.dish.name,
+                            "weight": dish.weight,
+                            "calories": dish.calories,
+                            "fats": dish.fats,
+                            "proteins": dish.proteins,
+                            "dinner_list_id": dish.dinner_list_id if dish.dinner_list_id else None,
+                            "created_at": dish.created_at,
+                        }
+                        for dish in intermediate_dinner_dishes
+                    ],
+                }
+            ],
+        }
+
+        return response_data
 
     else:
         return {"error": "Food list not found for the given user_id"}

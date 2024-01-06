@@ -46,6 +46,7 @@ class IntermediateDishList(BaseModel):
     """Схема для чтения IntermediateDish"""
     id: int
     dish_id: int
+    dish_name: str
     created_at: datetime
     calories: Optional[str] = None
     fats: Optional[str] = None
